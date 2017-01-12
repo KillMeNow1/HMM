@@ -48,23 +48,25 @@ def hmmlikelihood (likelihoods, cache, col, r):
         cache[key] = lik
         return lik
 
-def viterbi (likelihoods, cache, cache2, col, r):
+def viterbi (likelihoods, cache2, col, r):
     key = (r, col)
     if key in cache2:
         return cache2[key]
     elif col == 119:
-        return (-1,likelihoods[r,col])
+        return (r,likelihoods[r,col])
     else:
         max_index = 0
         temp = np.NINF
         for k in xrange(0,3):
-            v = np.log(TransitionProbs (r, k, 0.75, 1.0/3.0)) + viterbi (likelihoods, cache, cache2, col+1, k)[1]
+            v = np.log(TransitionProbs (r, k, 0.75, 1.0/3.0)) + viterbi (likelihoods, cache2, col+1, k)[1]
             if v > temp:
                 max_index = k
                 temp = v
         temp = likelihoods[r,col] + temp
         cache2[key] = (max_index,temp)
         return (max_index,temp)
+
+
 
 # Function containing felsensteins algorithm
 
@@ -124,20 +126,49 @@ if __name__ == "__main__":
         #print overall_log_likelihood
     #print likelihoods
     cache = {}
-    print hmmlikelihood (likelihoods, cache, 0, 0)
-    print hmmlikelihood (likelihoods, cache, 0, 1)
-    print hmmlikelihood (likelihoods, cache, 0, 2)
+    #print hmmlikelihood (likelihoods, cache, 0, 0)
+    #print hmmlikelihood (likelihoods, cache, 0, 1)
+    #print hmmlikelihood (likelihoods, cache, 0, 2)
 
+    #for r in xrange(0,3):
+    #    cache2 = {}
+    #    for col in xrange(119,-1,-1):
+    #        print col, r, viterbi (likelihoods, cache2, col, r), likelihoods[r,col]
+
+
+
+    results = np.zeros((3,120, 2))
     for r in xrange(0,3):
         cache2 = {}
-        for col in xrange(119,-1,-1):
-            print col, r, viterbi (likelihoods, cache, cache2, col, r), likelihoods[r,col]
+        for col in xrange(119, -1, -1):
+           results[r, col] = viterbi (likelihoods, cache2, col, r)
+        #print viterbi (likelihoods, cache2, 0, r)
+    #print results [0, :, 1]
 
-    if ((cache2[0, 0] > cache2 [1, 0]) and (cache2[0, 0] > cache2 [2, 0])):
-        print cache2[0,0]
-    elif cache2[1,0] > cache2[2,0]:
-        print cache2[1,0]
+    if ((results [0,0,1] > results [1,0,1]) and (results [0,0,1] > results [2,0,1])):
+        most_likely = 0
+    elif (results [1,0,1] > results [2,0,1]):
+        most_likely = 1
     else:
-        print cache2[2,0]
+        most_likely = 2
+    r = most_likely
+
+    result_table = np.zeros((120,4))
+
+    for col in xrange(0, 120):
+        a = results [r, col, 0]
+        if a == 0:
+            result_table [col, :] = [col, 1, 0, 0]
+        elif a == 1:
+            result_table [col, :] = [col, 0, 1, 0]
+        else:
+            result_table [col, :] = [col, 0, 0, 1]
+    print "Column   R 0.5  R 1   R 2"
+    print result_table
+
+
+
+
+
 
 
